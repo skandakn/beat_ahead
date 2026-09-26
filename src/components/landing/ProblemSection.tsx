@@ -2,17 +2,25 @@
 
 import { motion } from "framer-motion";
 import { Camera, Activity, Scan } from "lucide-react";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 export function ProblemSection() {
+  const { t } = useI18n();
+  const tests = [
+    { icon: Activity, label: "ECG", desc: t("problem.ecg") },
+    { icon: Scan, label: "Stress Test", desc: t("problem.stressTest") },
+    { icon: Camera, label: "Angiography", desc: t("problem.angiography") },
+  ];
+
   return (
     <section className="py-20 px-4 lg:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-navy-900">
-            Traditional cardiac testing is often a snapshot.
+            {t("problem.heading")}
           </h2>
           <p className="mt-4 text-navy-600 max-w-2xl mx-auto">
-            Point-in-time assessments miss the continuous physiological changes that occur between clinical visits.
+            {t("problem.description")}
           </p>
         </div>
 
@@ -20,14 +28,10 @@ export function ProblemSection() {
           {/* Snapshot tests */}
           <div>
             <h3 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-4">
-              Point-in-Time Assessments
+              {t("problem.pointInTime")}
             </h3>
             <div className="space-y-3">
-              {[
-                { icon: Activity, label: "ECG", desc: "Single recording at one moment" },
-                { icon: Scan, label: "Stress Test", desc: "Induced exertion snapshot" },
-                { icon: Camera, label: "Angiography", desc: "Invasive imaging procedure" },
-              ].map((item) => (
+              {tests.map((item) => (
                 <motion.div
                   key={item.label}
                   whileHover={{ x: 4 }}
@@ -48,7 +52,7 @@ export function ProblemSection() {
           {/* Continuous monitoring */}
           <div>
             <h3 className="text-sm font-semibold text-cardiac uppercase tracking-wider mb-4">
-              Continuous Physiological Trends
+              {t("problem.continuous")}
             </h3>
             <div className="rounded-xl border-2 border-red-100 bg-gradient-to-br from-red-50/50 to-white p-6">
               <div className="h-32 relative">
@@ -77,8 +81,7 @@ export function ProblemSection() {
                 </svg>
               </div>
               <p className="text-sm text-navy-700 mt-4 leading-relaxed">
-                BeatAhead analyzes <strong>changing physiological patterns</strong> rather than isolated readings,
-                combining wearable signals into a personalized ischemic-risk trend that existing devices expose separately.
+                {t("problem.continuousDescription")}
               </p>
             </div>
           </div>

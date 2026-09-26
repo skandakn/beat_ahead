@@ -12,6 +12,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CardiacVoiceWidget } from "@/components/voice/CardiacVoiceWidget";
 import { TourProvider } from "@/lib/tour/TourContext";
 import { GuidedTour } from "@/components/tour/GuidedTour";
+import { I18nProvider } from "@/lib/i18n/I18nProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -43,23 +44,25 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <BeatAheadAuthProvider>
-      <html lang="en">
+      <html lang="en" dir="ltr">
         <body className={`${inter.variable} font-sans`}>
-          <SubscriptionProvider>
-            <SimulationProvider>
-              <TooltipProvider>
-                <TourProvider>
-                  <GuidedTour />
-                  <DemoBanner />
-                  <Sidebar />
-                  <AppContentWrapper>{children}</AppContentWrapper>
-                  <MobileNav />
-                  <Toast />
-                  <CardiacVoiceWidget />
-                </TourProvider>
-              </TooltipProvider>
-            </SimulationProvider>
-          </SubscriptionProvider>
+          <I18nProvider>
+            <SubscriptionProvider>
+              <SimulationProvider>
+                <TooltipProvider>
+                  <TourProvider>
+                    <GuidedTour />
+                    <DemoBanner />
+                    <Sidebar />
+                    <AppContentWrapper>{children}</AppContentWrapper>
+                    <MobileNav />
+                    <Toast />
+                    <CardiacVoiceWidget />
+                  </TourProvider>
+                </TooltipProvider>
+              </SimulationProvider>
+            </SubscriptionProvider>
+          </I18nProvider>
         </body>
       </html>
     </BeatAheadAuthProvider>
