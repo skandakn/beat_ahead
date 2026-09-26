@@ -12,10 +12,12 @@ import { useTour } from "@/lib/tour/TourContext";
 import { ISI_RANGE_LABELS } from "@/lib/isi/types";
 import Link from "next/link";
 import { Heart, PhoneCall, FileText, CreditCard, BookOpen, Info, Compass } from "lucide-react";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 export default function DashboardPage() {
   const { settings, pauseMonitoring } = useSimulation();
   const { startTour } = useTour();
+  const { t } = useI18n();
 
   // Dashboard always shows a stable ISI score — stop any running simulation
   useEffect(() => {
@@ -27,8 +29,8 @@ export default function DashboardPage() {
     <div className="p-4 lg:p-8 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3" data-tour-id="dashboard-header">
         <div>
-          <h1 className="text-2xl font-bold text-navy-900">Dashboard</h1>
-          <p className="text-sm text-navy-500 mt-0.5">Cardiovascular Risk &amp; Health Overview</p>
+          <h1 className="text-2xl font-bold text-navy-900">{t("dashboard.title")}</h1>
+          <p className="text-sm text-navy-500 mt-0.5">{t("dashboard.subtitle")}</p>
         </div>
       </div>
 
@@ -76,14 +78,14 @@ export default function DashboardPage() {
               <span className="text-lg font-bold text-navy-900">BeatAhead</span>
             </div>
             <p className="text-xs text-navy-500">
-              ISI Platform for Cardiac Wellness
+              {t("dashboard.platform")}
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
             <h3 className="text-xs font-semibold text-navy-700 uppercase tracking-wide mb-3">
-              Quick Links
+              {t("dashboard.quickLinks")}
             </h3>
             <div className="space-y-2">
               <button
@@ -92,21 +94,21 @@ export default function DashboardPage() {
                 className="flex items-center gap-2 text-sm text-navy-600 hover:text-navy-900 transition-colors"
               >
                 <Compass className="w-3.5 h-3.5" />
-                Start Guided Tour
+                {t("dashboard.startTour")}
               </button>
               <Link
                 href="/helpline"
                 className="flex items-center gap-2 text-sm text-navy-600 hover:text-navy-900 transition-colors"
               >
                 <PhoneCall className="w-3.5 h-3.5" />
-                Cardiac Helpline
+                {t("dashboard.helpline")}
               </Link>
               <Link
                 href="/calls"
                 className="flex items-center gap-2 text-sm text-navy-600 hover:text-navy-900 transition-colors"
               >
                 <FileText className="w-3.5 h-3.5" />
-                Call Records
+                {t("dashboard.callRecords")}
               </Link>
             </div>
           </div>
@@ -114,7 +116,7 @@ export default function DashboardPage() {
           {/* Information */}
           <div>
             <h3 className="text-xs font-semibold text-navy-700 uppercase tracking-wide mb-3">
-              Information
+              {t("dashboard.information")}
             </h3>
             <div className="space-y-2">
               <Link
@@ -122,21 +124,21 @@ export default function DashboardPage() {
                 className="flex items-center gap-2 text-sm text-navy-600 hover:text-navy-900 transition-colors"
               >
                 <CreditCard className="w-3.5 h-3.5" />
-                Pricing
+                {t("nav.pricing")}
               </Link>
               <Link
                 href="/methodology"
                 className="flex items-center gap-2 text-sm text-navy-600 hover:text-navy-900 transition-colors"
               >
                 <BookOpen className="w-3.5 h-3.5" />
-                Methodology
+                {t("nav.methodology")}
               </Link>
               <Link
                 href="/about"
                 className="flex items-center gap-2 text-sm text-navy-600 hover:text-navy-900 transition-colors"
               >
                 <Info className="w-3.5 h-3.5" />
-                About
+                {t("nav.about")}
               </Link>
             </div>
           </div>
@@ -145,7 +147,7 @@ export default function DashboardPage() {
         {/* Bottom Bar */}
         <div className="mt-8 pt-6 border-t border-navy-100 text-center">
           <p className="text-xs text-navy-400">
-            © {new Date().getFullYear()} BeatAhead. Research prototype.
+            © {new Date().getFullYear()} BeatAhead. {t("footer.research")}
           </p>
         </div>
       </footer>

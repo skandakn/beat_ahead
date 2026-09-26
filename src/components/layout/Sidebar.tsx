@@ -29,6 +29,9 @@ import { useState, useEffect } from "react";
 import { SystemStatusPanel } from "./SystemStatusPanel";
 import { SettingsButton } from "./SettingsPanel";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import type { TranslationKey } from "@/lib/i18n/translations";
+import { LanguageSelector } from "./LanguageSelector";
 
 function useIsOnboarding(pathname: string): boolean {
   const [isOnboarding, setIsOnboarding] = useState(false);
@@ -43,20 +46,24 @@ function useIsOnboarding(pathname: string): boolean {
   return isOnboarding;
 }
 
-const navItems = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/health-record", label: "Health Record", icon: HeartPulse },
-  { href: "/signals", label: "Signals", icon: Activity },
-  { href: "/trends", label: "Trends", icon: BarChart3 },
-  { href: "/insights", label: "AI Insights", icon: Brain },
-  { href: "/nutri-agent", label: "Nutri Agent", icon: Salad },
-  { href: "/fitness", label: "Fitness Agent", icon: Dumbbell },
-  { href: "/rest", label: "Rest Agent", icon: Moon },
-  { href: "/clinician", label: "Clinician View", icon: Stethoscope },
-];
+function getNavItems(t: (key: TranslationKey) => string) {
+  return [
+    { href: "/dashboard", label: t("nav.overview"), icon: LayoutDashboard },
+    { href: "/health-record", label: t("nav.healthRecord"), icon: HeartPulse },
+    { href: "/signals", label: t("nav.signals"), icon: Activity },
+    { href: "/trends", label: t("nav.trends"), icon: BarChart3 },
+    { href: "/insights", label: t("nav.aiInsights"), icon: Brain },
+    { href: "/nutri-agent", label: t("nav.nutriAgent"), icon: Salad },
+    { href: "/fitness", label: t("nav.fitnessAgent"), icon: Dumbbell },
+    { href: "/rest", label: t("nav.restAgent"), icon: Moon },
+    { href: "/clinician", label: t("nav.clinicianView"), icon: Stethoscope },
+  ];
+}
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { t } = useI18n();
+  const navItems = getNavItems(t);
   const isOnboarding = useIsOnboarding(pathname);
   const isLanding = pathname === "/";
   const isAuthPage = pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up");
@@ -147,7 +154,7 @@ export function Sidebar() {
         <SystemStatusPanel compact />
         <SidebarSignOutButton />
         <div className="flex items-center justify-between px-1 pt-1">
-          <span className="text-xs text-navy-500">Settings</span>
+          <span className="text-xs text-navy-500">{t("common.settings")}</span>
           <SettingsButton />
         </div>
       </div>
@@ -157,17 +164,18 @@ export function Sidebar() {
 
 function SidebarSignOutButton() {
   const { isSignedIn, signOut, user } = useBeatAheadAuth();
+  const { t } = useI18n();
   if (!isSignedIn) return null;
   return (
     <div className="pt-1 border-t border-navy-100 flex items-center justify-between px-1 text-xs">
       <span className="font-semibold text-navy-800 truncate max-w-[110px]">
-        {user?.fullName || "Account"}
+        {user?.fullName || t("common.account")}
       </span>
       <button
         onClick={() => signOut()}
         className="text-red-600 hover:text-red-800 font-bold hover:underline"
       >
-        Sign Out
+        {t("common.signOut")}
       </button>
     </div>
   );
@@ -175,6 +183,8 @@ function SidebarSignOutButton() {
 
 export function MobileNav() {
   const pathname = usePathname();
+  const { t } = useI18n();
+  const navItems = getNavItems(t);
   const isOnboarding = useIsOnboarding(pathname);
   const [open, setOpen] = useState(false);
   const isLanding = pathname === "/";
@@ -211,7 +221,7 @@ export function MobileNav() {
             className="flex flex-col items-center gap-0.5 px-2 py-1 text-navy-400"
           >
             <Menu className="w-5 h-5" />
-            <span className="text-xs">More</span>
+            <span className="text-xs">{t("common.more")}</span>
           </button>
         </div>
       </nav>
@@ -224,8 +234,8 @@ export function MobileNav() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-semibold text-navy-900">Menu</h2>
-              <button onClick={() => setOpen(false)} className="p-1 rounded-lg hover:bg-navy-50">
+              <h2 className="font-semibold text-navy-900">{t("common.menu")}</h2>
+              <button onClick={() => setOpen(false)} className="p-1 rounded-lg hover:bg-navy-50" aria-label={t("common.closeMenu")}>
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -252,7 +262,7 @@ export function MobileNav() {
             <div className="mt-6 space-y-3">
               <SystemStatusPanel />
               <div className="flex items-center justify-between px-1 pt-2 border-t border-navy-100">
-                <span className="text-xs text-navy-500">Settings</span>
+                <span className="text-xs text-navy-500">{t("common.settings")}</span>
                 <SettingsButton />
               </div>
             </div>
@@ -265,6 +275,7 @@ export function MobileNav() {
 
 export function AppHeader() {
   const pathname = usePathname();
+  const { t } = useI18n();
   const isOnboarding = useIsOnboarding(pathname);
   const { isSignedIn } = useBeatAheadAuth();
   const isLanding = pathname === "/";
@@ -273,18 +284,18 @@ export function AppHeader() {
   if (isLanding || isAuthPage || isOnboarding) return null;
 
   const titles: Record<string, string> = {
-    "/dashboard": "Cardiovascular Health Dashboard",
-    "/signals": "Feature Analysis",
-    "/trends": "Long-term Trends",
-    "/insights": "AI Insights",
-    "/nutri-agent": "Nutri Agent",
-    "/health-record": "My Health Record",
-    "/fitness": "Fitness Agent",
-    "/rest": "Rest Agent",
-    "/clinician": "Clinician Dashboard",
-    "/pricing": "Pricing & Plans",
-    "/methodology": "Methodology",
-    "/about": "About BeatAhead",
+    "/dashboard": t("header.cardiovascularDashboard"),
+    "/signals": t("header.featureAnalysis"),
+    "/trends": t("header.longTermTrends"),
+    "/insights": t("nav.aiInsights"),
+    "/nutri-agent": t("nav.nutriAgent"),
+    "/health-record": t("header.myHealthRecord"),
+    "/fitness": t("nav.fitnessAgent"),
+    "/rest": t("nav.restAgent"),
+    "/clinician": t("header.clinicianDashboard"),
+    "/pricing": t("header.pricingPlans"),
+    "/methodology": t("nav.methodology"),
+    "/about": t("header.aboutBeatAhead"),
   };
 
   return (
@@ -298,6 +309,7 @@ export function AppHeader() {
           {titles[pathname] || "BeatAhead"}
         </h2>
         <div className="flex items-center gap-2 sm:gap-3">
+          <LanguageSelector compact className="border-r border-navy-200 pe-2" />
           <SettingsButton />
 
           <div className="ml-1 pl-2 border-l border-navy-200 flex items-center">
@@ -315,7 +327,7 @@ export function AppHeader() {
               <Link href="/sign-in">
                 <Button size="sm" variant="outline" className="gap-1.5 text-xs font-semibold">
                   <LogIn className="w-3.5 h-3.5" />
-                  Sign In
+                  {t("common.signIn")}
                 </Button>
               </Link>
             )}
