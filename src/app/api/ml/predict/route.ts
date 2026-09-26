@@ -1,7 +1,4 @@
 import { NextResponse } from "next/server";
-import { execFileSync } from "child_process";
-import path from "path";
-import fs from "fs";
 
 // 26 Expected Matrix A Features
 const EXPECTED_FEATURES = [
@@ -65,23 +62,17 @@ const FEATURE_BOUNDS: Record<string, [number, number]> = {
   st_slope_mm_min: [-20.0, 20.0]
 };
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://127.0.0.1:8000";
-const ML_WORKSPACE_DIR = process.env.ML_WORKSPACE_DIR || (
-  fs.existsSync(path.join(process.cwd(), "backend"))
-    ? path.join(process.cwd(), "backend")
-    : "C:\\ML Model - Ischemic"
-);
-const PYTHON_PATH = process.env.PYTHON_PATH || (
-  fs.existsSync(path.join(ML_WORKSPACE_DIR, ".venv", "Scripts", "python.exe"))
-    ? path.join(ML_WORKSPACE_DIR, ".venv", "Scripts", "python.exe")
-    : fs.existsSync("C:\\ML Model - Ischemic\\.venv\\Scripts\\python.exe")
-    ? "C:\\ML Model - Ischemic\\.venv\\Scripts\\python.exe"
-    : "python"
-);
-const ML_SERVICE_SCRIPT = path.join(ML_WORKSPACE_DIR, "src", "ml_service.py");
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL;
 
 export async function GET() {
-  // Health check endpoint
+  if (!ML_SERVICE_URL) {
+    return NextResponse.json({
+      status: "degraded",
+      mode: "remote_model_service_required",
+      error: "ML_SERVICE_URL is not configured. No prediction fallback is available.",
+    }, { status: 503 });
+  }
+
   try {
     const res = await fetch(`${ML_SERVICE_URL}/health`, {
       method: "GET",
@@ -96,17 +87,13 @@ export async function GET() {
         service_data: data
       });
     }
-  } catch {
-    // If daemon is not running, CLI fallback is ready
-  }
+  } catch {}
 
   return NextResponse.json({
-    status: "healthy",
-    mode: "cli_fallback_ready",
-    threshold: 0.156742,
-    model_version: "1.0.0-phase5-frozen",
-    schema_version: "1.0.0"
-  });
+    status: "unavailable",
+    mode: "remote_model_service_required",
+    error: "The configured trained-model service could not be reached. No prediction fallback is available.",
+  }, { status: 503 });
 }
 
 export async function POST(request: Request) {
@@ -174,8 +161,15 @@ export async function POST(request: Request) {
     );
   }
 
-  // 3. Attempt inference via HTTP Service
-  let result: any = null;
+  if (!ML_SERVICE_URL) {
+    return NextResponse.json({
+      error: "The trained-model service is not configured. Set ML_SERVICE_URL before requesting inference.",
+      code: "MODEL_SERVICE_UNAVAILABLE",
+    }, { status: 503 });
+  }
+
+  // 3. Run inference only through the configured frozen-model service.
+  let result: any;
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2000);
@@ -193,72 +187,22 @@ export async function POST(request: Request) {
     });
     clearTimeout(timeoutId);
 
-    if (res.ok) {
-      result = await res.json();
+    const payload = await res.json().catch(() => null);
+    if (!res.ok) {
+      return NextResponse.json({
+        error: payload?.error || "The trained-model service rejected the feature vector.",
+        code: "MODEL_SERVICE_ERROR",
+      }, { status: res.status >= 500 ? 503 : res.status });
     }
+    result = payload;
   } catch {
-    // HTTP daemon unavailable or timed out; smoothly fall back to CLI runner
+    return NextResponse.json({
+      error: "The trained-model service could not be reached. No prediction fallback is available.",
+      code: "MODEL_SERVICE_UNAVAILABLE",
+    }, { status: 503 });
   }
 
-  // 4. CLI Fallback if HTTP service didn't respond
-  if (!result) {
-    try {
-      const inputJson = JSON.stringify({ features: cleanFeatures });
-      const stdout = execFileSync(PYTHON_PATH, [ML_SERVICE_SCRIPT, "--cli"], {
-        input: inputJson,
-        encoding: "utf-8",
-        timeout: 5000,
-        windowsHide: true,
-        maxBuffer: 1024 * 1024
-      });
-      result = JSON.parse(stdout);
-    } catch (cliErr: any) {
-      // Graceful fallback for serverless environments (e.g. Vercel) without Python runtime
-      console.warn("ML Inference upstream/CLI unavailable; activating calibrated in-process evaluator");
-      const stMedian = cleanFeatures.st_obs_median ?? 0;
-      const stDelta = cleanFeatures.st_delta_baseline ?? 0;
-      const hr = cleanFeatures.ecg_hr_mean ?? 70;
-      const rmssd = cleanFeatures.ecg_rr_rmssd ?? 35;
-      const desat = cleanFeatures.spo2_desat_count ?? 0;
-
-      let score = 0.005;
-      if (stMedian < -0.1 || stDelta < -0.1) {
-        const dip = Math.max(0, -stMedian) + Math.max(0, -stDelta);
-        score += dip * 0.11;
-      }
-      if (hr > 80) {
-        score += ((hr - 80) / 40) * 0.04;
-      }
-      if (rmssd < 25) {
-        score += ((25 - rmssd) / 25) * 0.03;
-      }
-      if (desat > 0) {
-        score += Math.min(0.06, (desat / 30) * 0.06);
-      }
-      const boundedProb = Math.max(0.002, Math.min(0.85, score));
-
-      result = {
-        status: "success",
-        probability: boundedProb,
-        prediction: boundedProb >= 0.156742 ? 1 : 0,
-        threshold: 0.156742,
-        horizon_seconds: 300,
-        gap_seconds: 300,
-        observation_seconds: 300,
-        risk_tier: boundedProb >= 0.156742 ? "High Risk" : "Low Risk",
-        metadata: {
-          model_version: "1.0.0-phase5-frozen",
-          schema_version: "1.0.0",
-          artifact_id: "XGBoost_Matrix_A_v1_frozen",
-          training_cohort: "VitalDB 100-case frozen benchmark",
-          latency_ms: 1.5,
-          inference_engine: "in_process_fallback"
-        }
-      };
-    }
-  }
-
-  // 5. Check if service returned error
+  // 4. Check if service returned error
   if (result.error || result.status !== "success") {
     return NextResponse.json(
       {
@@ -269,7 +213,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // 6. Return sanitized standardized response
+  // 5. Return sanitized standardized response
   return NextResponse.json({
     status: "success",
     probability: result.probability,

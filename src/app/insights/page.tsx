@@ -3,7 +3,7 @@
 import { ContributionBars } from "@/components/isi/ContributionBars";
 import { ISIGauge } from "@/components/isi/ISIGauge";
 import { RiskTrendBanner } from "@/components/isi/RiskTrendBanner";
-import { ResearchModelSignalCard } from "@/components/ml/ResearchModelSignalCard";
+import { VerifiedModelInferencePanel } from "@/components/ml/VerifiedModelInferencePanel";
 import { useSimulation } from "@/lib/simulation/SimulationContext";
 import { useSubscription } from "@/lib/subscription/SubscriptionContext";
 import { Paywall } from "@/components/ui/Paywall";
@@ -57,7 +57,7 @@ export default function InsightsPage() {
       </div>
 
       {/* Phase 7 Staging ML Integration: Research Model Signal */}
-      <ResearchModelSignalCard />
+      <VerifiedModelInferencePanel />
       <RiskTrendBanner />
 
       <div className="grid lg:grid-cols-3 gap-6">

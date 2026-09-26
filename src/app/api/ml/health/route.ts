@@ -1,12 +1,25 @@
 import { NextResponse } from "next/server";
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://127.0.0.1:8000";
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL;
 
 export async function GET() {
   const timestamp = new Date().toISOString();
 
   let upstreamStatus = "unreachable";
   let upstreamDetails: Record<string, unknown> | null = null;
+
+  if (!ML_SERVICE_URL) {
+    return NextResponse.json({
+      status: "degraded",
+      timestamp,
+      service: "BeatAhead ML Gateway",
+      upstream_service: {
+        status: "not_configured",
+        configured_url: false,
+        details: null,
+      },
+    }, { status: 503 });
+  }
 
   try {
     const controller = new AbortController();
@@ -29,7 +42,7 @@ export async function GET() {
       const data = await res.json();
       upstreamDetails = {
         model_loaded: data.model_loaded ?? true,
-        features_count: data.features_count ?? 26,
+        feature_count: data.feature_count ?? 26,
       };
     }
   } catch {

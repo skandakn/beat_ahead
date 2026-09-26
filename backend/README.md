@@ -97,6 +97,23 @@ docker build -t beatahead-ml-backend .
 docker run -p 8080:8080 beatahead-ml-backend
 ```
 
+## Production connection
+
+The Vercel web application calls the trained model through a separate HTTPS
+service. Deploy this `backend/` directory to a container platform such as Cloud
+Run, then configure these Vercel environment variables:
+
+```text
+ML_SERVICE_URL=https://<your-inference-service>
+ML_SERVICE_AUTH_TOKEN=<optional shared service token>
+```
+
+The web gateway deliberately returns an unavailable response when this service
+is absent or unreachable. It does not use a heuristic or simulated prediction
+as a substitute. Send only a fully measured 26-feature Matrix A payload to
+`POST /api/ml/predict`; the frozen model cannot derive ECG, PPG, SpO₂, PAT, or
+ST-segment features from fitness or profile data.
+
 ---
 
 ## 🧪 Running Automated Tests

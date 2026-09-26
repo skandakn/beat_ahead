@@ -15,6 +15,7 @@ import sys
 import json
 import time
 import argparse
+import hmac
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 from socketserver import ThreadingMixIn
@@ -57,7 +58,18 @@ class MLServiceRequestHandler(BaseHTTPRequestHandler):
         self._set_cors_headers()
         self.end_headers()
 
+    def _is_authorized(self) -> bool:
+        expected_token = os.environ.get("ML_SERVICE_AUTH_TOKEN")
+        if not expected_token:
+            return True
+        authorization = self.headers.get("Authorization", "")
+        return hmac.compare_digest(authorization, f"Bearer {expected_token}")
+
     def do_GET(self):
+        if not self._is_authorized():
+            self._send_json(401, {"error": "Unauthorized"})
+            return
+
         if self.path in ["/health", "/", "/api/health"]:
             if INFERENCE_ENGINE is None:
                 self._send_json(503, {
@@ -97,6 +109,10 @@ class MLServiceRequestHandler(BaseHTTPRequestHandler):
             self._send_json(404, {"error": "Endpoint not found"})
 
     def do_POST(self):
+        if not self._is_authorized():
+            self._send_json(401, {"error": "Unauthorized"})
+            return
+
         if self.path not in ["/predict", "/api/ml/predict"]:
             self._send_json(404, {"error": "Endpoint not found"})
             return
